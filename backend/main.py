@@ -8,18 +8,23 @@ import json
 try:
     json_file = open("backend/setting.json", "r")
 except OSError as e:
-    print("[ ERROR ] Please create a file \"backend/setting.json\".") 
+    print("[ BACKEND ERROR ] Please create a file \"backend/setting.json\".") 
     exit() 
 json_data = json.load(json_file)
 json_file.close()
 
 # creates an object that controls the connection to the smb server. 
-nas_conn = SMBConnection(
-    json_data["user"], 
-    json_data["password"], 
-    platform.uname().node, 
-    "IEWIN7")
-nas_conn.connect(json_data["server_ip"], json_data["server_port"])
+try:
+    nas_conn = SMBConnection(
+        json_data["user"], 
+        json_data["password"], 
+        platform.uname().node, 
+        "IEWIN7")
+    nas_conn.connect(json_data["server_ip"], json_data["server_port"])
+except:
+    print("[ BACKEND ERROR ] Please reconfigure the information about NAS by executing the following.")
+    print("$ ./setup.sh config")
+    exit()
 
 app = Flask(__name__)
 
