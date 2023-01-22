@@ -1,6 +1,6 @@
 from flask import Flask
 import platform
-from smb.SMBConnection import SMBConnection
+from nas import NAS
 import io
 import json
 
@@ -13,18 +13,15 @@ except OSError as e:
 json_data = json.load(json_file)
 json_file.close()
 
-# creates an object that controls the connection to the smb server. 
-try:
-    nas_conn = SMBConnection(
-        json_data["user"], 
-        json_data["password"], 
-        platform.uname().node, 
-        "IEWIN7")
-    nas_conn.connect(json_data["server_ip"], json_data["server_port"])
-except:
-    print("[ BACKEND ERROR ] Please reconfigure the information about NAS by executing the following.")
-    print("$ ./setup.sh config")
-    exit()
+nas = NAS(
+    json_data["user"],
+    json_data["password"], 
+    json_data["server_ip"], 
+    json_data["server_port"],
+    "hoge", 
+    "backend/tmp"
+)
+exit()
 
 app = Flask(__name__)
 
@@ -35,9 +32,9 @@ def index():
 # returns the list of files in "folder"
 @app.route("/nas/<folder>/")
 def list_search(folder):
-    global nas_conn
+    global nas
     try:
-        items = nas_conn.listPath(folder, "")
+        items = nas.listPath(folder, "")
         res = ""
         for item in items:
             res += item.filename
