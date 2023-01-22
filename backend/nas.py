@@ -23,7 +23,7 @@ class NAS:
         self.synchronize("")
         print("Synchronization with NAS is completed.")
 
-        print(self.ls("/"))
+        print(self.ls(""))
 
 
     # connect to NAS
@@ -79,6 +79,7 @@ class NAS:
     # This function synchronizes a file or directory located at "path" with nas.
     # If path specifies a directory, synchronization is done recursively.
     def synchronize(self, path: str) -> bool:
+        print(path)
         local_path = "./" + self.tmp_dir_path + path
         try:
             att: SharedFile = self.conn.getAttributes(
@@ -86,7 +87,7 @@ class NAS:
                 path
             )
         except:
-            print(f"[ ERROR ] {self.shared_folder_name}:{path} does'n exist in NAS.")
+            print(f"[ ERROR ] {self.shared_folder_name}:{path} doesn't exist in NAS.")
             return False
         
         if att.isDirectory:
