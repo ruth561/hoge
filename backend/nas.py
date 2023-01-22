@@ -6,8 +6,6 @@ import io
 import os
 
 
-
-
 class NAS:
     def __init__(self, uname: str, passwd: str, server_ip: str, server_port: int, 
                  shared_folder_name: str, tmp_dir_path: str):
@@ -25,11 +23,10 @@ class NAS:
         self.synchronize("")
         print("Synchronization with NAS is completed.")
 
-        print(self.get_file("/README.md"))
-        print(self.get_file("/README.md"))
-        print(self.get_file("/README.md"))
+        print(self.ls("/"))
 
 
+    # connect to NAS
     def connect(self) -> SMBConnection:
         try:
             self.conn = SMBConnection(
@@ -40,7 +37,7 @@ class NAS:
             )
             self.conn.connect(self.server_ip, self.server_port)
             print("Successfully connected to NAS")
-        except:
+        except Exception as e:
             print(f"[ ERROR ] Failed to connect to the NAS ({self.server_ip}, {self.server_port}). ")
             exit()
     
@@ -55,17 +52,28 @@ class NAS:
             exit()
 
 
-    def ls(self, dir_path: str):
+    # return a tuple that (file list, dir list)
+    def ls(self, path: str):
         try:
-            items = self.conn.listPath(self.shared_folder_name, dir_path)
-            print(items)
-            res = ""
-            for item in items:
-                res += item.filename
-                res += "\r\n"
-            return res
+            att: SharedFile = self.conn.getAttributes(
+                self.shared_folder_name,
+                path
+            )
         except:
+            print(f"[ ERROR ] {self.shared_folder_name}:{path} does'n exist in NAS.")
             return None
+        
+        dirs = list()
+        files = list()
+        if att.isDirectory:
+            self.synchronize(path)
+            items: list[SharedFile] = self.conn.listPath(self.shared_folder_name, path)
+            for item in items:
+                if item.isDirectory:
+                    dirs.append(item.filename)
+                else:
+                    files.append(item.filename)
+        return dirs, files
 
 
     # This function synchronizes a file or directory located at "path" with nas.

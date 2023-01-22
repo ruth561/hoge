@@ -6,7 +6,7 @@ import json
 try:
     json_file = open("backend/setting.json", "r")
 except OSError as e:
-    print("[ BACKEND ERROR ] Please create a file \"backend/setting.json\".") 
+    print("[ ERROR ] Please create a file \"backend/setting.json\".") 
     exit() 
 json_data = json.load(json_file)
 json_file.close()
@@ -24,12 +24,17 @@ nas = NAS(
 # Web Application
 app = Flask(__name__)
 
-@app.route("/api")
-def index():
-    return "Hello, world!"
+@app.route("/api/<seminar_id>")
+def get_metadata(seminar_id):
+    global nas
+    dirs, _ = nas.ls("/")
+    if seminar_id in dirs:
+        return nas.get_file(seminar_id + "/metadata.json")
+    return "Nothing"
 
 # return the data of file at "folder/path"
-@app.route("/nas/<path>")
+@app.route("/nas/<path:path>")
 def get_file(path):
     global nas
+    print(path)
     return nas.get_file(path)
