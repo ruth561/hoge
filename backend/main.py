@@ -1,56 +1,40 @@
 from flask import Flask
-import platform
-from smb.SMBConnection import SMBConnection
-import io
+from nas import NAS
 import json
 
 # gets information to connect to smb server. 
 try:
     json_file = open("backend/setting.json", "r")
 except OSError as e:
-    print("[ BACKEND ERROR ] Please create a file \"backend/setting.json\".") 
+    print("[ ERROR ] Please create a file \"backend/setting.json\".") 
     exit() 
 json_data = json.load(json_file)
 json_file.close()
 
-# creates an object that controls the connection to the smb server. 
-try:
-    nas_conn = SMBConnection(
-        json_data["user"], 
-        json_data["password"], 
-        platform.uname().node, 
-        "IEWIN7")
-    nas_conn.connect(json_data["server_ip"], json_data["server_port"])
-except:
-    print("[ BACKEND ERROR ] Please reconfigure the information about NAS by executing the following.")
-    print("$ ./setup.sh config")
-    exit()
+nas = NAS(
+    json_data["user"],
+    json_data["password"], 
+    json_data["server_ip"], 
+    json_data["server_port"],
+    "hoge", 
+    "backend/tmp"
+)
 
+
+# Web Application
 app = Flask(__name__)
 
-@app.route("/api")
-def index():
-    return "Hello, world!"
-
-# returns the list of files in "folder"
-@app.route("/nas/<folder>/")
-def list_search(folder):
-    global nas_conn
-    try:
-        items = nas_conn.listPath(folder, "")
-        res = ""
-        for item in items:
-            res += item.filename
-            res += "\r\n"
-        return res
-    except:
-        return f"Error. Sorry, NAS doesn't have such a solder \"{folder}\"."
+@app.route("/api/<seminar_id>")
+def get_metadata(seminar_id):
+    global nas
+    dirs, _ = nas.ls("/")
+    if seminar_id in dirs:
+        return nas.get_file(seminar_id + "/metadata.json")
+    return "Nothing"
 
 # return the data of file at "folder/path"
-@app.route("/nas/<folder>/<path>")
-def get_file(folder, path):
-    global nas_conn
-    with io.BytesIO() as file:
-        nas_conn.retrieveFile(folder, path, file)
-        file.seek(0)
-        return file.read().decode()
+@app.route("/nas/<path:path>")
+def get_file(path):
+    global nas
+    print(path)
+    return nas.get_file(path)
