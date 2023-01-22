@@ -1,7 +1,5 @@
 from flask import Flask
-import platform
 from nas import NAS
-import io
 import json
 
 # gets information to connect to smb server. 
@@ -21,33 +19,17 @@ nas = NAS(
     "hoge", 
     "backend/tmp"
 )
-exit()
 
+
+# Web Application
 app = Flask(__name__)
 
 @app.route("/api")
 def index():
     return "Hello, world!"
 
-# returns the list of files in "folder"
-@app.route("/nas/<folder>/")
-def list_search(folder):
-    global nas
-    try:
-        items = nas.listPath(folder, "")
-        res = ""
-        for item in items:
-            res += item.filename
-            res += "\r\n"
-        return res
-    except:
-        return f"Error. Sorry, NAS doesn't have such a solder \"{folder}\"."
-
 # return the data of file at "folder/path"
-@app.route("/nas/<folder>/<path>")
-def get_file(folder, path):
-    global nas_conn
-    with io.BytesIO() as file:
-        nas_conn.retrieveFile(folder, path, file)
-        file.seek(0)
-        return file.read().decode()
+@app.route("/nas/<path>")
+def get_file(path):
+    global nas
+    return nas.get_file(path)
