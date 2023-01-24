@@ -115,9 +115,9 @@ class NAS:
         return True
 
 
-    def get_file(self, file_path: str) -> bytes:
+    def get_file(self, file_path: str) -> Union[None, bytes]:
         local_file_path = "./" + self.tmp_dir_path + file_path
         if self.synchronize(file_path):
             with open(local_file_path, "rb") as file:
                 return file.read()
-        return "Nothing"
+        return None
