@@ -24,17 +24,33 @@ nas = NAS(
 # Web Application
 app = Flask(__name__)
 
+@app.route("/api/all")
+def get_all_metadata():
+    global nas
+    dirs, _ = nas.ls("")
+    d = dict()
+    for dir in dirs:
+        data = nas.get_file(dir + "/metadata.json")
+        if data:
+            d[dir] = json.loads(data)
+    return json.dumps(d, indent=4, ensure_ascii=False)
+
+
 @app.route("/api/<seminar_id>")
 def get_metadata(seminar_id):
     global nas
     dirs, _ = nas.ls("/")
     if seminar_id in dirs:
-        return nas.get_file(seminar_id + "/metadata.json")
-    return "Nothing"
+        data = nas.get_file(seminar_id + "/metadata.json")
+        if data:
+            return data
+    return b"Nothing"
 
 # return the data of file at "folder/path"
 @app.route("/nas/<path:path>")
 def get_file(path):
     global nas
-    print(path)
-    return nas.get_file(path)
+    data = nas.get_file(path)
+    if data:
+        return data
+    return b"Nothing"

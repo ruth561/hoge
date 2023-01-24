@@ -2,8 +2,9 @@ from flask import Flask
 import platform
 from smb.SMBConnection import SMBConnection
 from smb.base import SharedFile, OperationFailure
-import io
 import os
+import re
+from typing import Union, Tuple, List
 
 
 class NAS:
@@ -23,7 +24,7 @@ class NAS:
         self.synchronize("")
         print("Synchronization with NAS is completed.")
 
-        print(self.ls(""))
+        print(self.ls("////01"))
 
 
     # connect to NAS
@@ -53,7 +54,8 @@ class NAS:
 
 
     # return a tuple that (file list, dir list)
-    def ls(self, path: str):
+    def ls(self, path: str) -> Union[None, Tuple[List[str], List[str]]]:
+        path = re.sub(r"^/*", "", path)
         try:
             att: SharedFile = self.conn.getAttributes(
                 self.shared_folder_name,
@@ -67,20 +69,20 @@ class NAS:
         files = list()
         if att.isDirectory:
             self.synchronize(path)
-            items: list[SharedFile] = self.conn.listPath(self.shared_folder_name, path)
+            items: List[SharedFile] = self.conn.listPath(self.shared_folder_name, path)
             for item in items:
                 if item.isDirectory:
                     dirs.append(item.filename)
                 else:
                     files.append(item.filename)
-        return dirs, files
+        return (dirs, files)
 
 
     # This function synchronizes a file or directory located at "path" with nas.
     # If path specifies a directory, synchronization is done recursively.
     def synchronize(self, path: str) -> bool:
-        print(path)
-        local_path = "./" + self.tmp_dir_path + path
+        path = re.sub(r"^/*", "", path)
+        local_path = self.tmp_dir_path + path
         try:
             att: SharedFile = self.conn.getAttributes(
                 self.shared_folder_name,
@@ -113,9 +115,9 @@ class NAS:
         return True
 
 
-    def get_file(self, file_path: str) -> bytes:
+    def get_file(self, file_path: str) -> Union[None, bytes]:
         local_file_path = "./" + self.tmp_dir_path + file_path
         if self.synchronize(file_path):
             with open(local_file_path, "rb") as file:
                 return file.read()
-        return "Nothing"
+        return None
