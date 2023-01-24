@@ -20,11 +20,12 @@ nas = NAS(
     "backend/tmp"
 )
 
-
 # Web Application
 app = Flask(__name__)
 
-@app.route("/api/all")
+
+# returns all metadata as json file
+@app.route("/api/seminars/all")
 def get_all_metadata():
     global nas
     dirs, _ = nas.ls("")
@@ -36,21 +37,32 @@ def get_all_metadata():
     return json.dumps(d, indent=4, ensure_ascii=False)
 
 
-@app.route("/api/<seminar_id>")
+# returns a file <seminar_id>/metadata.json
+@app.route("/api/seminars/<seminar_id>")
 def get_metadata(seminar_id):
     global nas
     dirs, _ = nas.ls("/")
     if seminar_id in dirs:
-        data = nas.get_file(seminar_id + "/metadata.json")
-        if data:
-            return data
-    return b"Nothing"
+        meta_data = nas.get_file(seminar_id + "/metadata.json")
+        if meta_data:
+            return meta_data
+    return b""
 
-# return the data of file at "folder/path"
+
+# returns a file <seminar_id>/<filename>
+@app.route("/api/seminars/<seminar_id>/<file_name>")
+def get_file_data(seminar_id: str, file_name: str):
+    global nas
+    file_data = nas.get_file(seminar_id + "/" + file_name)
+    if file_data:
+        return file_data
+    return b""
+
+
 @app.route("/nas/<path:path>")
 def get_file(path):
     global nas
     data = nas.get_file(path)
     if data:
         return data
-    return b"Nothing"
+    return b""
