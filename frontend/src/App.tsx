@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 // eslint-disable-next-line import/no-unresolved
 import { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api'
@@ -29,7 +29,14 @@ const App = () => {
   const [seminars, setSeminars] = useState<Seminar[]>([])
   const [allSeminarIds, setAllSeminarIds] = useState<string[]>([])
 
+  // development時に２回useEffectが走ると、NASへのアクセスも連続して２回起き、その内の１つが失敗する。
+  // そのため、development時においてもuseEffectは１回しか走らないようにする。
+  const isFirstRender = useRef(true)
   useEffect(() => {
+    if (isFirstRender.current && process.env.NODE_ENV === 'development') {
+      isFirstRender.current = false
+      return
+    }
     const fetchData = async () => {
       const response = await fetch('/api/all')
       const data = await response.text()
